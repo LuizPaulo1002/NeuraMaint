@@ -1,0 +1,59 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+    - duration: 120
+      arrivalRate: 15
+    - duration: 60
+      arrivalRate: 5
+  defaults:
+    headers:
+      content-type: "application/json"
+      Authorization: "Bearer {{ authToken }}"
+
+before:
+  flow:
+    - post:
+        url: "/api/auth/login"
+        json:
+          email: "tecnico@example.com"
+          password: "password123"
+        capture:
+          json: "$.token"
+          as: "authToken"
+
+scenarios:
+  - name: "Get Active Alerts"
+    flow:
+      - get:
+          url: "/api/alerts/active"
+      - get:
+          url: "/api/alerts/active?nivel=critico"
+      - get:
+          url: "/api/alerts/active?bombaId=1"
+          
+  - name: "Get Alert History"
+    flow:
+      - get:
+          url: "/api/alerts/history"
+      - get:
+          url: "/api/alerts/history?limit=50"
+      - get:
+          url: "/api/alerts/history?bombaId=1&limit=20"
+      
+  - name: "Get Alert Statistics"
+    flow:
+      - get:
+          url: "/api/alerts/statistics"
+      - get:
+          url: "/api/alerts/statistics?days=7"
+      - get:
+          url: "/api/alerts/statistics?bombaId=1&days=30"
+          
+  - name: "Resolve Alert"
+    flow:
+      - post:
+          url: "/api/alerts/1/resolve"
+          json:
+            action: "Test resolution from load test"

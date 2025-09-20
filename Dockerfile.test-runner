@@ -1,0 +1,29 @@
+# Test Runner Dockerfile
+FROM node:18-alpine
+
+# Install Python and other dependencies
+RUN apk add --no-cache python3 py3-pip git curl
+
+# Set working directory
+WORKDIR /app
+
+# Copy test scripts
+COPY test-scripts/ ./test-scripts/
+
+# Copy package files
+COPY package*.json ./
+
+# Install Node.js dependencies
+RUN npm install
+
+# Install Python dependencies for ML service tests
+RUN pip3 install pytest requests
+
+# Make scripts executable
+RUN chmod +x ./test-scripts/*.sh
+
+# Create directories for test results
+RUN mkdir -p ./test-results ./test-reports ./coverage
+
+# Default command
+CMD ["./test-scripts/run-all-tests.sh"]

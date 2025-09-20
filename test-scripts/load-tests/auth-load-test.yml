@@ -1,0 +1,38 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+    - duration: 120
+      arrivalRate: 10
+    - duration: 60
+      arrivalRate: 5
+  defaults:
+    headers:
+      content-type: "application/json"
+
+scenarios:
+  - name: "User Login"
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "admin@example.com"
+            password: "password123"
+          capture:
+            json: "$.token"
+            as: "authToken"
+      - get:
+          url: "/api/auth/profile"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+            
+  - name: "User Registration"
+    flow:
+      - post:
+          url: "/api/auth/register"
+          json:
+            nome: "Load Test User"
+            email: "loadtest{{ $randomNumber(1000, 9999) }}@example.com"
+            password: "password123"
+            papel: "tecnico"

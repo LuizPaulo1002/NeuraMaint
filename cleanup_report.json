@@ -1,0 +1,64 @@
+{
+  "timestamp": "2025-09-18T04:43:00.581Z",
+  "totalItems": 7,
+  "totalSize": "796.44 MB",
+  "totalSizeInBytes": 835123297,
+  "items": [
+    {
+      "path": "C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\frontend\\node_modules",
+      "type": "directory",
+      "size": "366.75 MB",
+      "sizeInBytes": 384567640,
+      "modified": "2025-09-03T05:32:58.734Z",
+      "justification": "Dependency cache directory"
+    },
+    {
+      "path": "C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\backend\\node_modules",
+      "type": "directory",
+      "size": "305.81 MB",
+      "sizeInBytes": 320661403,
+      "modified": "2025-09-09T00:46:20.694Z",
+      "justification": "Dependency cache directory"
+    },
+    {
+      "path": "C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\node_modules",
+      "type": "directory",
+      "size": "72.61 MB",
+      "sizeInBytes": 76132849,
+      "modified": "2025-08-25T06:40:06.743Z",
+      "justification": "Dependency cache directory"
+    },
+    {
+      "path": "C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\frontend\\.next",
+      "type": "directory",
+      "size": "50.65 MB",
+      "sizeInBytes": 53114699,
+      "modified": "2025-09-03T05:33:06.687Z",
+      "justification": "Next.js build cache"
+    },
+    {
+      "path": "C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\backend\\dist",
+      "type": "directory",
+      "size": "526.9 KB",
+      "sizeInBytes": 539547,
+      "modified": "2025-08-23T00:47:35.115Z",
+      "justification": "Build artifacts"
+    },
+    {
+      "path": "C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\backend\\logs",
+      "type": "directory",
+      "size": "68.45 KB",
+      "sizeInBytes": 70091,
+      "modified": "2025-09-07T08:02:19.577Z",
+      "justification": "Log files directory"
+    },
+    {
+      "path": "C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\ml-service\\__pycache__",
+      "type": "directory",
+      "size": "36.2 KB",
+      "sizeInBytes": 37068,
+      "modified": "2025-08-23T07:19:58.142Z",
+      "justification": "Python cache directory"
+    }
+  ]
+}

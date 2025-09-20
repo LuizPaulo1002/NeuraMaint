@@ -1,0 +1,64 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+    - duration: 120
+      arrivalRate: 10
+    - duration: 60
+      arrivalRate: 5
+  defaults:
+    headers:
+      content-type: "application/json"
+      Authorization: "Bearer {{ authToken }}"
+
+before:
+  flow:
+    - post:
+        url: "/api/auth/login"
+        json:
+          email: "admin@example.com"
+          password: "password123"
+        capture:
+          json: "$.token"
+          as: "authToken"
+
+scenarios:
+  - name: "List Equipment"
+    flow:
+      - get:
+          url: "/api/pumps"
+      - get:
+          url: "/api/pumps?status=ativo"
+      - get:
+          url: "/api/pumps?limit=20&page=1"
+      
+  - name: "Get Equipment Details"
+    flow:
+      - get:
+          url: "/api/pumps/1"
+      - get:
+          url: "/api/pumps/2"
+      - get:
+          url: "/api/pumps/3"
+          
+  - name: "Create Equipment"
+    flow:
+      - post:
+          url: "/api/pumps"
+          json:
+            nome: "Load Test Pump {{ $randomNumber(1000, 9999) }}"
+            modelo: "Test Model"
+            localizacao: "Load Test Location"
+            status: "ativo"
+            capacidade: 100
+            potencia: 50
+            anoFabricacao: 2023
+            
+  - name: "Update Equipment"
+    flow:
+      - put:
+          url: "/api/pumps/1"
+          json:
+            localizacao: "Updated Location {{ $randomNumber(100, 999) }}"
+            observacoes: "Updated by load test"

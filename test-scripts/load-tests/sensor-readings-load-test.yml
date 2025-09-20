@@ -1,0 +1,67 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 30
+      arrivalRate: 10
+    - duration: 120
+      arrivalRate: 20
+    - duration: 30
+      arrivalRate: 10
+  defaults:
+    headers:
+      content-type: "application/json"
+      Authorization: "Bearer {{ authToken }}"
+
+before:
+  flow:
+    - post:
+        url: "/api/auth/login"
+        json:
+          email: "admin@example.com"
+          password: "password123"
+        capture:
+          json: "$.token"
+          as: "authToken"
+
+scenarios:
+  - name: "Submit Sensor Readings"
+    flow:
+      - post:
+          url: "/api/readings"
+          json:
+            sensorId: 1
+            valor: "{{ $randomNumber(20, 80) }}"
+            timestamp: "{{ $timestamp }}"
+            qualidade: "{{ $randomNumber(80, 100) }}"
+      - post:
+          url: "/api/readings"
+          json:
+            sensorId: 2
+            valor: "{{ $randomNumber(100, 200) }}"
+            timestamp: "{{ $timestamp }}"
+            qualidade: "{{ $randomNumber(80, 100) }}"
+            
+  - name: "Get Latest Readings"
+    flow:
+      - get:
+          url: "/api/readings/latest?sensorId=1"
+      - get:
+          url: "/api/readings/latest?sensorId=2"
+      - get:
+          url: "/api/readings/latest?bombaId=1"
+      
+  - name: "Get Reading History"
+    flow:
+      - get:
+          url: "/api/readings/history?sensorId=1&limit=50"
+      - get:
+          url: "/api/readings/history?sensorId=2&limit=50"
+      - get:
+          url: "/api/readings/history?bombaId=1&limit=100"
+          
+  - name: "Get Reading Statistics"
+    flow:
+      - get:
+          url: "/api/readings/stats?sensorId=1&period=24h"
+      - get:
+          url: "/api/readings/stats?sensorId=2&period=24h"

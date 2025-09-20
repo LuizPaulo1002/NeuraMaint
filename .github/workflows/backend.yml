@@ -1,0 +1,218 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+
+env:
+  NODE_VERSION: '18.x'
+
+jobs:
+  test:
+    name: Test Backend
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+          POSTGRES_DB: pumpguard_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Setup test environment
+        run: |
+          cp .env.example .env
+          echo "DATABASE_URL=postgresql://postgres:postgres@localhost:5432/pumpguard_test" >> .env
+          echo "JWT_SECRET=test-secret-key" >> .env
+          echo "NODE_ENV=test" >> .env
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Run database migrations
+        run: npm run prisma:migrate
+
+      - name: Seed test database
+        run: npm run prisma:seed
+
+      - name: Run ESLint
+        run: npm run lint
+
+      - name: Run unit tests with coverage
+        run: npm run test:coverage
+
+      - name: Check test coverage threshold
+        run: |
+          npm run test:coverage -- --passWithNoTests --coverageThreshold='{"global":{"branches":60,"functions":60,"lines":60,"statements":60}}'
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          file: backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  build:
+    name: Build Backend
+    runs-on: ubuntu-latest
+    needs: test
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Build application
+        run: npm run build
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: backend-build
+          path: backend/dist/
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/develop'
+    environment: staging
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway Staging
+        run: |
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          railway environment staging
+          railway up --service backend-staging
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Run production migrations
+        run: |
+          railway run --service backend-staging npm run prisma:migrate
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [test, build]
+    if: github.ref == 'refs/heads/main'
+    environment: production
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install Railway CLI
+        run: npm install -g @railway/cli
+
+      - name: Deploy to Railway Production
+        run: |
+          railway login --token ${{ secrets.RAILWAY_TOKEN }}
+          railway environment production
+          railway up --service backend-production
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Run production migrations
+        run: |
+          railway run --service backend-production npm run prisma:migrate
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+
+      - name: Health check
+        run: |
+          sleep 30
+          curl -f ${{ secrets.BACKEND_PRODUCTION_URL }}/health || exit 1
+
+  notify:
+    name: Notify Deployment
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+
+    steps:
+      - name: Notify success
+        if: needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success'
+        run: |
+          echo "✅ Backend deployment successful"
+          
+      - name: Notify failure
+        if: needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure'
+        run: |
+          echo "❌ Backend deployment failed"
+          exit 1

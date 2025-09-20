@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # Backend service for testing
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.test
+    container_name: neuramaint-backend-test
+    environment:
+      - NODE_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@postgres-test:5432/neuramaint_test
+      - JWT_SECRET=test-secret-key
+      - JWT_EXPIRES_IN=1h
+      - ML_SERVICE_URL=http://ml-service-test:5000
+    ports:
+      - "3001:3001"
+    depends_on:
+      - postgres-test
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+
+  # Frontend service for testing
+  frontend-test:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.test
+    container_name: neuramaint-frontend-test
+    environment:
+      - NODE_ENV=test
+      - NEXT_PUBLIC_API_URL=http://backend-test:3001
+      - NEXT_PUBLIC_ML_SERVICE_URL=http://ml-service-test:5000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+
+  # ML Service for testing
+  ml-service-test:
+    build:
+      context: ./ml-service
+      dockerfile: Dockerfile.test
+    container_name: neuramaint-ml-test
+    environment:
+      - FLASK_ENV=test
+      - DATABASE_URL=postgresql://postgres:postgres@postgres-test:5432/neuramaint_ml_test
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./ml-service:/app
+
+  # PostgreSQL database for testing
+  postgres-test:
+    image: postgres:15-alpine
+    container_name: neuramaint-postgres-test
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=neuramaint_test
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_test_data:/var/lib/postgresql/data
+      - ./backend/prisma/migrations:/docker-entrypoint-initdb.d/migrations
+
+  # Test database for ML service
+  postgres-ml-test:
+    image: postgres:15-alpine
+    container_name: neuramaint-postgres-ml-test
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=neuramaint_ml_test
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_ml_test_data:/var/lib/postgresql/data
+
+  # Redis for caching (if needed)
+  redis-test:
+    image: redis:7-alpine
+    container_name: neuramaint-redis-test
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_test_data:/data
+
+  # Test runner service
+  test-runner:
+    build:
+      context: .
+      dockerfile: Dockerfile.test-runner
+    container_name: neuramaint-test-runner
+    depends_on:
+      - backend-test
+      - frontend-test
+      - ml-service-test
+      - postgres-test
+    volumes:
+      - ./test-results:/app/test-results
+      - ./test-reports:/app/test-reports
+      - ./coverage:/app/coverage
+
+volumes:
+  postgres_test_data:
+  postgres_ml_test_data:
+  redis_test_data:

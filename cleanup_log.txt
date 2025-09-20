@@ -1,0 +1,17 @@
+Cleanup started at 2025-09-18T04:49:36.265Z
+=========================================
+Starting cleanup process...
+Successfully deleted: C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\frontend\\node_modules (366.75 MB)
+Successfully deleted: C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\backend\\node_modules (305.81 MB)
+Successfully deleted: C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\node_modules (72.61 MB)
+Successfully deleted: C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\frontend\\.next (50.65 MB)
+Successfully deleted: C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\backend\\dist (526.9 KB)
+Successfully deleted: C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\backend\\logs (68.45 KB)
+Successfully deleted: C:\\Users\\Jônatas Felipe\\Desktop\\NeuraMaint\\ml-service\\__pycache__ (36.2 KB)
+
+Cleanup completed at 2025-09-18T04:51:25.358Z
+=========================================
+Total items processed: 7
+Successfully deleted: 7
+Errors: 0
+Total space freed: 796.44 MB

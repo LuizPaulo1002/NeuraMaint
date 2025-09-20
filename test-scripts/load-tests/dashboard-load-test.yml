@@ -1,0 +1,45 @@
+config:
+  target: "http://localhost:3000"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+    - duration: 120
+      arrivalRate: 15
+    - duration: 60
+      arrivalRate: 5
+  defaults:
+    headers:
+      content-type: "application/json"
+      Authorization: "Bearer {{ authToken }}"
+
+before:
+  flow:
+    - post:
+        url: "/api/auth/login"
+        json:
+          email: "admin@example.com"
+          password: "password123"
+        capture:
+          json: "$.token"
+          as: "authToken"
+
+scenarios:
+  - name: "Dashboard Overview"
+    flow:
+      - get:
+          url: "/api/dashboard/overview"
+      - get:
+          url: "/api/dashboard/alerts"
+      - get:
+          url: "/api/dashboard/readings/latest"
+      - get:
+          url: "/api/dashboard/equipment/status"
+          
+  - name: "Dashboard Statistics"
+    flow:
+      - get:
+          url: "/api/dashboard/statistics"
+      - get:
+          url: "/api/dashboard/alerts/history"
+      - get:
+          url: "/api/dashboard/readings/trends"

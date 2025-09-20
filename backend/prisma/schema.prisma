@@ -1,0 +1,174 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// Tabela de Usuários
+model Usuario {
+  id        Int      @id @default(autoincrement())
+  nome      String
+  email     String   @unique
+  senha     String
+  papel     String   // "admin", "tecnico", "gestor"
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  // Relacionamentos
+  bombas            Bomba[]  
+  alertasResolvidos Alerta[] @relation("AlertaResolvedor")
+
+  @@map("usuarios")
+}
+
+// Tabela de Bombas
+model Bomba {
+  id          Int         @id @default(autoincrement())
+  nome        String      @unique
+  modelo      String?
+  localizacao String
+  status      String      @default("ativo") // "ativo", "inativo"
+  capacidade  Float?
+  potencia    Float?
+  anoFabricacao Int?      @map("ano_fabricacao")
+  dataInstalacao DateTime? @map("data_instalacao")
+  proximaManutencao DateTime? @map("proxima_manutencao")
+  observacoes String?
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  
+  // Foreign Keys
+  usuarioId   Int         @map("usuario_id")
+
+  // Relacionamentos
+  usuario     Usuario     @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  sensores    Sensor[]
+  alertas     Alerta[]
+  manutencoes Manutencao[]
+
+  @@map("bombas")
+}
+
+// Tabela de Sensores
+model Sensor {
+  id          Int         @id @default(autoincrement())
+  tipo        String      // "temperatura", "vibracao", "pressao", "fluxo", "rotacao"
+  unidade     String
+  descricao   String?
+  valorMinimo Float?      @map("valor_minimo")
+  valorMaximo Float?      @map("valor_maximo")
+  ativo       Boolean     @default(true)
+  configuracao String?    // JSON as string for SQLite compatibility
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  
+  // Foreign Keys
+  bombaId     Int         @map("bomba_id")
+
+  // Relacionamentos
+  bomba       Bomba       @relation(fields: [bombaId], references: [id], onDelete: Cascade)
+  leituras    Leitura[]
+
+  @@map("sensores")
+}
+
+// Tabela de Leituras
+model Leitura {
+  id        Int      @id @default(autoincrement())
+  valor     Float
+  timestamp DateTime @default(now())
+  qualidade Float?   // Qualidade do sinal (0-100)
+  createdAt DateTime @default(now()) @map("created_at")
+  
+  // Foreign Keys
+  sensorId  Int      @map("sensor_id")
+
+  // Relacionamentos
+  sensor    Sensor   @relation(fields: [sensorId], references: [id], onDelete: Cascade)
+  predicao  Predicao?
+
+  // Índices para performance em consultas de séries temporais
+  @@index([timestamp])
+  @@index([sensorId, timestamp])
+  @@map("leituras")
+}
+
+// Tabela de Predições
+model Predicao {
+  id                    Int      @id @default(autoincrement())
+  probabilidadeFalha    Float    @map("probabilidade_falha")
+  confianca            Float?
+  algoritmoUtilizado   String?  @map("algoritmo_utilizado")
+  parametrosModelo     String?  @map("parametros_modelo") // JSON as string
+  tempoPrevisto        Int?     @map("tempo_previsto") // Tempo até falha estimado em horas
+  recomendacoes        String?
+  processadoEm         DateTime @default(now()) @map("processado_em")
+  
+  // Foreign Keys
+  leituraId            Int      @unique @map("leitura_id")
+
+  // Relacionamentos
+  leitura              Leitura  @relation(fields: [leituraId], references: [id], onDelete: Cascade)
+
+  @@map("predicoes")
+}
+
+// Tabela de Alertas
+model Alerta {
+  id          Int         @id @default(autoincrement())
+  tipo        String
+  mensagem    String
+  nivel       String      // "normal", "atencao", "critico"
+  status      String      @default("pendente") // "pendente", "resolvido", "cancelado"
+  valor       Float?      // Valor que gerou o alerta
+  threshold   Float?      // Limite que foi ultrapassado
+  acaoTomada  String?     @map("acao_tomada")
+  resolvidoPor Int?       @map("resolvido_por")
+  resolvidoEm DateTime?   @map("resolvido_em")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+  
+  // Foreign Keys
+  bombaId     Int         @map("bomba_id")
+
+  // Relacionamentos
+  bomba       Bomba       @relation(fields: [bombaId], references: [id], onDelete: Cascade)
+  resolvedor  Usuario?    @relation("AlertaResolvedor", fields: [resolvidoPor], references: [id])
+
+  // Índices para consultas frequentes
+  @@index([status])
+  @@index([nivel])
+  @@index([bombaId, status])
+  @@map("alertas")
+}
+
+// Tabela de Manutenções (adicional para histórico)
+model Manutencao {
+  id            Int      @id @default(autoincrement())
+  tipo          String
+  descricao     String
+  dataInicio    DateTime @map("data_inicio")
+  dataFim       DateTime? @map("data_fim")
+  custo         Float?
+  responsavel   String
+  observacoes   String?
+  pecasUtilizadas String?  @map("pecas_utilizadas") // JSON as string
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+  
+  // Foreign Keys
+  bombaId       Int      @map("bomba_id")
+
+  // Relacionamentos
+  bomba         Bomba    @relation(fields: [bombaId], references: [id], onDelete: Cascade)
+
+  @@map("manutencoes")
+}
+
