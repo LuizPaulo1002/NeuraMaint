@@ -1,1 +1,1 @@
-Neura Maint Project
+O NeuraMaint é um sistema de manutenção preditiva para equipamentos industriais, com foco inicial em bombas hidráulicas. A arquitetura é baseada em um monorepo contendo três serviços principais: um backend (Node.js, Express, Prisma), um frontend (Next.js, React, Tailwind CSS) e um serviço de Machine Learning (Python). O objetivo estratégico é reduzir custos de manutenção e paradas não planejadas através da análise de dados de sensores (temperatura, vibração, etc.) para prever falhas iminentes.
