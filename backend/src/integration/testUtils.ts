@@ -57,8 +57,8 @@ export const cleanDatabase = async () => {
   try {
     // Delete in proper order to respect foreign key constraints
     // Delete child tables first
-    await prisma.leitura.deleteMany({});
-    await prisma.predicao.deleteMany({});
+
+    await prisma.leitura.deleteMany({});    await prisma.predicao.deleteMany({});
     await prisma.sensor.deleteMany({});
     await prisma.alerta.deleteMany({});
     await prisma.manutencao.deleteMany({});
@@ -293,7 +293,7 @@ export const teardownTestEnvironment = async () => {
       console.error('Error disconnecting Prisma client:', error);
     }
     
-    prisma = null;
+    prisma =  undefined as any;
   }
   
   // Server is not started in test environment, so no need to close it
