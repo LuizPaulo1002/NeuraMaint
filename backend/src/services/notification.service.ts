@@ -102,12 +102,15 @@ export class FrontendNotificationManager {
    */
   private setupNotificationHandler(): void {
     // Import AlertService dynamically to avoid circular dependencies
-    import('./alert.service.js').then(({ AlertService }) => {
-      // Check if onAlertCreated exists before calling it
-      if (AlertService && typeof AlertService.onAlertCreated === 'function') {
-        AlertService.onAlertCreated((alert) => {
+    import('./alert.service.js').then((module) => {
+      // If AlertService is exported as an instance with 'on', use it directly
+      const alertServiceInstance = module.AlertService;
+      if (alertServiceInstance && typeof alertServiceInstance.on === 'function') {
+        alertServiceInstance.on('alertCreated', (alert: any) => {
           this.handleNewAlert(alert);
         });
+      } else {
+        console.warn('AlertService does not expose an "on" method for alertCreated events.');
       }
     }).catch(error => {
       console.error('Failed to setup notification handler:', error);

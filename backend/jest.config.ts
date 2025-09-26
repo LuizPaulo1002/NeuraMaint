@@ -10,14 +10,12 @@ const config: Config = {
     '!**/integration/**',
     '!**/__tests__/setup.ts'
   ],
-  transform: {
-    '^.+\.(ts|tsx)
-: ['ts-jest', {
-      useESM: true,
-    }],
-    '^.+\.js
-: 'babel-jest',
-  },
+transform: {
+  '^.+\\.(ts|tsx)$': ['ts-jest', {
+    useESM: true,
+  }],
+  '^.+\\.js$': 'babel-jest',
+},
   transformIgnorePatterns: [
     'node_modules/(?!(@babel|@jest)/)'
   ],
@@ -53,11 +51,10 @@ const config: Config = {
   ],
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'mjs'],
   moduleNameMapper: {
-    '@/(.*)': '<rootDir>/src/$1',
-    '^(\.{1,2}/.*)\.js
-: '$1',
-    // Mock validation utils
-    '../utils/validation.js': '<rootDir>/src/__mocks__/validation.ts',
+'@/(.*)': '<rootDir>/src/$1',
+'^(\.{1,2}/.*)\\.js$': '$1',
+// Mock validation utils
+'../utils/validation.js': '<rootDir>/src/__mocks__/validation.ts',
     '../../utils/validation.js': '<rootDir>/src/__mocks__/validation.ts',
     './validation.js': '<rootDir>/src/__mocks__/validation.ts'
   },

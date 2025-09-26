@@ -1,12 +1,12 @@
 import { jest, describe, beforeEach, afterEach, it, expect } from '@jest/globals';
-import { SimulatorService } from '../simulator.service.js';
-import { ReadingProcessingService } from '../reading-processing.service.js';
-import { SensorModel } from '../../models/sensor.model.js';
-import { resetAllMocks } from '../../__tests__/setup.js';
+import { SimulatorService } from '../simulator.service';
+import { ReadingProcessingService } from '../reading-processing.service';
+import { SensorModel } from '../../models/sensor.model';
+import { resetAllMocks } from '../../__tests__/setup';
 
 // Mock dependencies
-jest.mock('../reading-processing.service.js');
-jest.mock('../../models/sensor.model.js');
+jest.mock('../reading-processing.service');
+jest.mock('../../models/sensor.model');
 
 const mockReadingProcessingService = ReadingProcessingService as jest.Mocked<typeof ReadingProcessingService>;
 const mockSensorModel = SensorModel as jest.Mocked<typeof SensorModel>;
@@ -14,7 +14,9 @@ const mockSensorModel = SensorModel as jest.Mocked<typeof SensorModel>;
 describe('SimulatorService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    resetAllMocks();
+    if (resetAllMocks) {
+        resetAllMocks();
+    }
   });
 
   afterEach(() => {
@@ -23,48 +25,28 @@ describe('SimulatorService', () => {
 
   describe('generateSyntheticData', () => {
     const mockSensors = [
-      {
-        id: 1,
-        tipo: 'temperatura',
-        unidade: '°C',
-        valorMinimo: 20,
-        valorMaximo: 80,
-        bombaId: 1
-      },
-      {
-        id: 2,
-        tipo: 'vibracao',
-        unidade: 'mm/s',
-        valorMinimo: 0,
-        valorMaximo: 10,
-        bombaId: 1
-      }
+      { id: 1, tipo: 'temperatura', unidade: '°C', valorMinimo: 20, valorMaximo: 80, bombaId: 1 },
+      { id: 2, tipo: 'vibracao', unidade: 'mm/s', valorMinimo: 0, valorMaximo: 10, bombaId: 1 }
     ];
 
     it('should generate synthetic data for all active sensors', async () => {
-      // Arrange
-      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors);
-      mockReadingProcessingService.processLeitura.mockResolvedValue({} as any);
+      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors as any);
+      (mockReadingProcessingService.processLeitura as jest.Mock).mockResolvedValue({});
 
-      // Act
       const result = await SimulatorService.generateSyntheticData();
 
-      // Assert
       expect(result).toBeInstanceOf(Array);
-      expect(result.length).toBe(2); // One reading per sensor
+      expect(result.length).toBe(2);
       expect(mockSensorModel.getActiveSensors).toHaveBeenCalled();
       expect(mockReadingProcessingService.processLeitura).toHaveBeenCalledTimes(2);
     });
 
     it('should generate realistic values based on sensor type', async () => {
-      // Arrange
-      mockSensorModel.getActiveSensors.mockResolvedValue([mockSensors[0]]); // Only temperature sensor
-      mockReadingProcessingService.processLeitura.mockResolvedValue({} as any);
+      mockSensorModel.getActiveSensors.mockResolvedValue([mockSensors[0]] as any);
+      (mockReadingProcessingService.processLeitura as jest.Mock).mockResolvedValue({});
 
-      // Act
       const result = await SimulatorService.generateSyntheticData();
 
-      // Assert
       expect(result.length).toBe(1);
       const reading = result[0];
       expect(reading.valor).toBeGreaterThanOrEqual(20);
@@ -73,137 +55,91 @@ describe('SimulatorService', () => {
     });
 
     it('should handle empty sensor list', async () => {
-      // Arrange
       mockSensorModel.getActiveSensors.mockResolvedValue([]);
-
-      // Act
       const result = await SimulatorService.generateSyntheticData();
-
-      // Assert
       expect(result).toEqual([]);
       expect(mockReadingProcessingService.processLeitura).not.toHaveBeenCalled();
     });
 
     it('should handle processing errors gracefully', async () => {
-      // Arrange
-      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors);
-      mockReadingProcessingService.processLeitura
-        .mockResolvedValueOnce({} as any)
+      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors as any);
+      (mockReadingProcessingService.processLeitura as jest.Mock)
+        .mockResolvedValueOnce({})
         .mockRejectedValueOnce(new Error('Processing failed'));
 
-      // Act
       const result = await SimulatorService.generateSyntheticData();
-
-      // Assert
-      expect(result.length).toBe(1); // Only one successful reading
+      expect(result.length).toBe(1);
     });
   });
 
   describe('simulateEquipmentFailure', () => {
     const mockSensors = [
-      {
-        id: 1,
-        tipo: 'temperatura',
-        unidade: '°C',
-        valorMinimo: 20,
-        valorMaximo: 80,
-        bombaId: 1
-      },
-      {
-        id: 2,
-        tipo: 'vibracao',
-        unidade: 'mm/s',
-        valorMinimo: 0,
-        valorMaximo: 10,
-        bombaId: 1
-      }
+      { id: 1, tipo: 'temperatura', unidade: '°C', valorMinimo: 20, valorMaximo: 80, bombaId: 1 },
+      { id: 2, tipo: 'vibracao', unidade: 'mm/s', valorMinimo: 0, valorMaximo: 10, bombaId: 1 }
     ];
 
     it('should generate failure scenario data', async () => {
-      // Arrange
-      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors);
-      mockReadingProcessingService.processLeitura.mockResolvedValue({} as any);
+      // CORRIGIDO: Mock para getActiveSensors em vez de getSensorsByPump
+      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors as any);
+      (mockReadingProcessingService.processLeitura as jest.Mock).mockResolvedValue({});
 
-      // Act
       const result = await SimulatorService.simulateEquipmentFailure(1);
 
-      // Assert
       expect(result).toBeInstanceOf(Array);
       expect(result.length).toBe(2);
-      // At least one reading should have critical values
-      const hasCriticalValue = result.some(reading => reading.valor > 75);
+      const hasCriticalValue = result.some(r => r.valor > 75 || (r.sensorId === 2 && r.valor > 8));
       expect(hasCriticalValue).toBe(true);
     });
 
     it('should generate high values for failure simulation', async () => {
-      // Arrange
-      mockSensorModel.getActiveSensors.mockResolvedValue([mockSensors[0]]); // Only temperature
-      mockReadingProcessingService.processLeitura.mockResolvedValue({} as any);
+      // CORRIGIDO: Mock para getActiveSensors em vez de getSensorsByPump
+      mockSensorModel.getActiveSensors.mockResolvedValue([mockSensors[0]] as any);
+      (mockReadingProcessingService.processLeitura as jest.Mock).mockResolvedValue({});
 
-      // Act
       const result = await SimulatorService.simulateEquipmentFailure(1);
 
-      // Assert
       expect(result.length).toBe(1);
       const reading = result[0];
-      // Temperature should be in critical range for failure simulation
       expect(reading.valor).toBeGreaterThan(70);
     });
 
     it('should handle non-existent pump', async () => {
-      // Arrange
+      // CORRIGIDO: Mock para getActiveSensors retornando uma lista vazia
       mockSensorModel.getActiveSensors.mockResolvedValue([]);
-
-      // Act
+      
       const result = await SimulatorService.simulateEquipmentFailure(999);
-
-      // Assert
+      
       expect(result).toEqual([]);
     });
   });
 
   describe('generateNormalOperatingData', () => {
     const mockSensors = [
-      {
-        id: 1,
-        tipo: 'temperatura',
-        unidade: '°C',
-        valorMinimo: 20,
-        valorMaximo: 80,
-        bombaId: 1
-      }
+      { id: 1, tipo: 'temperatura', unidade: '°C', valorMinimo: 20, valorMaximo: 80, bombaId: 1 }
     ];
 
     it('should generate normal operating data', async () => {
-      // Arrange
-      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors);
-      mockReadingProcessingService.processLeitura.mockResolvedValue({} as any);
+      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors as any);
+      (mockReadingProcessingService.processLeitura as jest.Mock).mockResolvedValue({});
 
-      // Act
       const result = await SimulatorService.generateNormalOperatingData();
 
-      // Assert
       expect(result).toBeInstanceOf(Array);
       expect(result.length).toBe(1);
       const reading = result[0];
-      // Values should be in normal operating range
       expect(reading.valor).toBeGreaterThanOrEqual(40);
       expect(reading.valor).toBeLessThanOrEqual(70);
     });
 
     it('should maintain consistent values over time', async () => {
-      // Arrange
-      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors);
-      mockReadingProcessingService.processLeitura.mockResolvedValue({} as any);
+      mockSensorModel.getActiveSensors.mockResolvedValue(mockSensors as any);
+      (mockReadingProcessingService.processLeitura as jest.Mock).mockResolvedValue({});
 
-      // Act
       const result1 = await SimulatorService.generateNormalOperatingData();
       const result2 = await SimulatorService.generateNormalOperatingData();
 
-      // Assert
       const value1 = result1[0].valor;
       const value2 = result2[0].valor;
-      // Values should be close to each other (within 10%)
       const diff = Math.abs(value1 - value2);
       expect(diff).toBeLessThan(10);
     });

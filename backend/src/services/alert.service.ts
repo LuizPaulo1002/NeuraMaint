@@ -69,7 +69,7 @@ export class AlertService {
       const [alertas, total] = await Promise.all([
         prisma.alerta.findMany({
           where: whereClause,
-          orderBy: { timestamp: 'desc' },
+          orderBy: { createdAt: 'desc' },
           skip: (pagina - 1) * limite,
           take: limite,
           include: { bomba: true }

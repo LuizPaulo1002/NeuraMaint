@@ -13,8 +13,8 @@ export class MLService {
 
   // Static methods for tests
   public static async predictFailure(sensorData: any): Promise<number> {
-    // Return a mock prediction value
-    return 15.5; // 15.5% probability
+    // Return a mock prediction value (CORRIGIDO para probabilidade)
+    return 0.155; // 15.5% probability
   }
 
   public static async getCachedPrediction(sensorData: any): Promise<any> {
@@ -36,8 +36,8 @@ export class MLService {
 
   // Instance methods
   public async predictFailure(sensorData: any): Promise<number> {
-    // Return a mock prediction value
-    return 15.5; // 15.5% probability
+    // Return a mock prediction value (CORRIGIDO para probabilidade)
+    return 0.155; // 15.5% probability
   }
 
   public async getPredictionDetails(sensorData: any): Promise<any> {
